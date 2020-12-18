@@ -35,7 +35,11 @@ ServeurCrawler::ServeurCrawler(QWidget *parent)
     if(!connect(socketEcoute, &QTcpServer::newConnection, this, &ServeurCrawler::onQTcpServer_newConnection)){
         qDebug() << "Problème lors de la nouvelle connection";
     }
+    grille = new QGridLayout;
     AfficherGrille();
+    //ajouter la case du trésor
+    tresor = DonnerPositionUnique();
+    grille->itemAtPosition(tresor.y(), tresor.x())->widget()->setStyleSheet("background-color : red");
 }
 
 /**
@@ -59,10 +63,11 @@ void ServeurCrawler::onQTcpServer_newConnection()
     connect(client,&QTcpSocket::readyRead,this,&ServeurCrawler::onQTcpSocket_readyRead);
     connect(client, &QTcpSocket::disconnected, this, &ServeurCrawler::onQTcpSocket_disconnected);
     listeSocketsClient.append(client);
-    qDebug() << "un client est connecté";
     QPoint position = DonnerPositionUnique();
     listePositions.append(position);
     EnvoyerDonnees(client, position, "start");
+    grille->itemAtPosition(position.y(), position.x())->widget()->setStyleSheet("background-color : black");
+    qDebug() << "un client est connecté";
 }
 
 /**
@@ -91,19 +96,85 @@ void ServeurCrawler::onQTcpSocket_readyRead()
         }
     }
     //Etudier la demande du client
+    QPoint position = listePositions.at(index);
+    grille->itemAtPosition(position.y(), position.x())->widget()->setStyleSheet("background-color : white");
+    QPoint positionTest;
     switch (commande.toLatin1()) {
     //vers le haut
     case 'U' :
+        positionTest.setX(position.x());
+        positionTest.setY(position.y()-1);
+        if(positionTest.y() <= -1){
+           position.setY(position.y()+1);
+        }
+        else{
+         position.setY(position.y()-1);
+        }
         break;
         //vers le bas
     case 'D' :
+        positionTest.setX(position.x());
+        positionTest.setY(position.y()+1);
+        if(positionTest.y() >= 20){
+           position.setY(position.y()-1);
+        }
+        else{
+         position.setY(position.y()+1);
+        }
         break;
         //vers la gauche
     case 'L' :
+        positionTest.setX(position.x()-1);
+        positionTest.setY(position.y());
+        if(positionTest.x() <= -1){
+            position.setX(position.x()+1);
+        }
+        else{
+           position.setX(position.x()-1);
+        }
         break;
         //vers la droite
     case 'R' :
+        positionTest.setX(position.x()+1);
+        positionTest.setY(position.y());
+        if(positionTest.x() >= 20){
+            position.setX(position.x()-1);
+        }
+        else{
+            position.setX(position.x()+1);
+        }
         break;
+    }
+    //si le joueur a trouvé le trésor
+    if(position == tresor){
+        QPoint fin;
+        fin.setX(-1);
+        fin.setY(-1);
+        EnvoyerDonnees(client, fin, QString("Victoire de ")+QString(client->peerAddress().toString()));
+        disconnect(client);
+        grille->itemAtPosition(position.y(), position.x())->widget()->setStyleSheet("background-color : white");
+        ViderGrille();
+    }
+    //si il y a une collision
+    if(listePositions.contains(position)){
+        int indexCollision = listePositions.indexOf(position);
+        position = DonnerPositionUnique();
+        EnvoyerDonnees(client, position, "Collision");
+        grille->itemAtPosition(position.y(), position.x())->widget()->setStyleSheet("background-color : black");
+        listePositions.replace(index, position);
+        QPoint positionAutreJoueur = listePositions.at(indexCollision);
+        grille->itemAtPosition(positionAutreJoueur.y(), positionAutreJoueur.x())->widget()->setStyleSheet("background-color : white");
+        positionAutreJoueur = DonnerPositionUnique();
+        listePositions.replace(indexCollision,positionAutreJoueur);
+        QTcpSocket *autreJoueur = listeSocketsClient.at(indexCollision);
+        EnvoyerDonnees(autreJoueur, positionAutreJoueur, "Collision");
+        grille->itemAtPosition(positionAutreJoueur.y(), positionAutreJoueur.x())->widget()->setStyleSheet("background-color : black");
+    }
+    //si il n'y a rien dans la case
+    if(!listePositions.contains(position) && !(position == tresor)){
+        EnvoyerDonnees(client, position, "vide");
+        listePositions.replace(index, position);
+        grille->itemAtPosition(position.y(), position.x())->widget()->setStyleSheet("background-color : black");
     }
 }
 
@@ -114,10 +185,14 @@ void ServeurCrawler::onQTcpSocket_readyRead()
 void ServeurCrawler::onQTcpSocket_disconnected()
 {
     QTcpSocket *client=qobject_cast<QTcpSocket*>(sender());
-    listeSocketsClient.removeOne(client);
     //récupérer la position du client dans la liste des connexions
     int index=listeSocketsClient.indexOf(client);
+    QPoint position = listePositions.at(index);
+    grille->itemAtPosition(position.y(), position.x())->widget()->setStyleSheet("background-color : white");
     listePositions.removeAt(index);
+    //suppression du client
+    listeSocketsClient.removeOne(client);
+
     qDebug() << "un client est déconnecté";
 }
 
@@ -129,6 +204,7 @@ void ServeurCrawler::on_pushButton_Lancement_clicked()
 {
     if(socketEcoute->listen(QHostAddress::Any, ui->spinBox_Port->text().toInt())){
         qDebug() << "Le serveur est lancé";
+        qDebug() << "coordonnées trésor : " << tresor.x() << ", " << tresor.y();
     }
     ui->pushButton_Lancement->setEnabled(false);
 }
@@ -166,12 +242,12 @@ void ServeurCrawler::EnvoyerDonnees(QTcpSocket *_client, QPoint _pt, QString _me
  */
 void ServeurCrawler::AfficherGrille()
 {
-    grille = new QGridLayout;
     for(int ligne=0; ligne<TAILLE; ligne++)
     {
         for (int colonne=0; colonne<TAILLE; colonne++)
         {
             QToolButton *b=new QToolButton();
+            b->setEnabled(false);
             grille->addWidget(b,ligne,colonne,1,1);
         }
     }
@@ -189,7 +265,15 @@ void ServeurCrawler::AfficherGrille()
  */
 void ServeurCrawler::ViderGrille()
 {
-
+    for(int ligne=0; ligne<TAILLE; ligne++)
+    {
+        for (int colonne=0; colonne<TAILLE; colonne++)
+        {
+            grille->itemAtPosition(ligne, colonne)->widget()->setStyleSheet("background-color : white");
+        }
+    }
+    tresor = DonnerPositionUnique();
+    grille->itemAtPosition(tresor.y(), tresor.x())->widget()->setStyleSheet("background-color : red");
 }
 
 /**
