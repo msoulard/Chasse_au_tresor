@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ServeurCrawler</class>
+ <widget class="QWidget" name="ServeurCrawler">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>642</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>ServeurCrawler</string>
+  </property>
+  <widget class="QLabel" name="label_Port">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>490</y>
+     <width>312</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Port d'écoute</string>
+   </property>
+  </widget>
+  <widget class="QSpinBox" name="spinBox_Port">
+   <property name="geometry">
+    <rect>
+     <x>140</x>
+     <y>480</y>
+     <width>153</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="minimum">
+    <number>8888</number>
+   </property>
+   <property name="maximum">
+    <number>9999</number>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButton_Lancement">
+   <property name="geometry">
+    <rect>
+     <x>250</x>
+     <y>500</y>
+     <width>100</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Lancement</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButton_Quitter">
+   <property name="geometry">
+    <rect>
+     <x>410</x>
+     <y>540</y>
+     <width>80</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Quitter</string>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>pushButton_Quitter</sender>
+   <signal>clicked()</signal>
+   <receiver>ServeurCrawler</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>313</x>
+     <y>577</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>407</x>
+     <y>573</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>
