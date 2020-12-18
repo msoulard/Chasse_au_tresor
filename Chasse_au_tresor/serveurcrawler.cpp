@@ -105,10 +105,10 @@ void ServeurCrawler::onQTcpSocket_readyRead()
         positionTest.setX(position.x());
         positionTest.setY(position.y()-1);
         if(positionTest.y() <= -1){
-           position.setY(position.y()+1);
+            position.setY(position.y()+1);
         }
         else{
-         position.setY(position.y()-1);
+            position.setY(position.y()-1);
         }
         break;
         //vers le bas
@@ -116,10 +116,10 @@ void ServeurCrawler::onQTcpSocket_readyRead()
         positionTest.setX(position.x());
         positionTest.setY(position.y()+1);
         if(positionTest.y() >= 20){
-           position.setY(position.y()-1);
+            position.setY(position.y()-1);
         }
         else{
-         position.setY(position.y()+1);
+            position.setY(position.y()+1);
         }
         break;
         //vers la gauche
@@ -130,7 +130,7 @@ void ServeurCrawler::onQTcpSocket_readyRead()
             position.setX(position.x()+1);
         }
         else{
-           position.setX(position.x()-1);
+            position.setX(position.x()-1);
         }
         break;
         //vers la droite
@@ -150,43 +150,38 @@ void ServeurCrawler::onQTcpSocket_readyRead()
         QPoint fin;
         fin.setX(-1);
         fin.setY(-1);
-//        int indexListe = listeSocketsClient.count();
-//        for(int i = 0 ; i > indexListe ; i++){
-//            QTcpSocket *joueur;
-//            joueur = listeSocketsClient.at(0);
-//            EnvoyerDonnees(joueur, fin, QString("Victoire de ")+QString(client->peerAddress().toString()));
-//            int indexFin=listeSocketsClient.indexOf(joueur);
-//            QPoint positionFin = listePositions.at(index);
-//            grille->itemAtPosition(positionFin.y(), positionFin.x())->widget()->setStyleSheet("background-color : white");
-//            joueur->close();
-//            listePositions.removeAt(indexFin);
-//            listeSocketsClient.removeOne(joueur);
-//        }
-        EnvoyerDonnees(client, fin, QString("Victoire de ")+QString(client->peerAddress().toString()));
-        //client->close();
-        grille->itemAtPosition(position.y(), position.x())->widget()->setStyleSheet("background-color : white");
+        foreach (QTcpSocket *joueur, listeSocketsClient) {
+            EnvoyerDonnees(joueur, fin, QString("Victoire de ")+QString(client->peerAddress().toString()));
+        }
+        foreach (QTcpSocket *joueur, listeSocketsClient) {
+            joueur->close();
+        }
         ViderGrille();
     }
-    //si il y a une collision
-    if(listePositions.contains(position)){
-        int indexCollision = listePositions.indexOf(position);
-        position = DonnerPositionUnique();
-        EnvoyerDonnees(client, position, "Collision");
-        grille->itemAtPosition(position.y(), position.x())->widget()->setStyleSheet("background-color : black");
-        listePositions.replace(index, position);
-        QPoint positionAutreJoueur = listePositions.at(indexCollision);
-        grille->itemAtPosition(positionAutreJoueur.y(), positionAutreJoueur.x())->widget()->setStyleSheet("background-color : white");
-        positionAutreJoueur = DonnerPositionUnique();
-        listePositions.replace(indexCollision,positionAutreJoueur);
-        QTcpSocket *autreJoueur = listeSocketsClient.at(indexCollision);
-        EnvoyerDonnees(autreJoueur, positionAutreJoueur, "Collision");
-        grille->itemAtPosition(positionAutreJoueur.y(), positionAutreJoueur.x())->widget()->setStyleSheet("background-color : black");
-    }
-    //si il n'y a rien dans la case
-    if(!listePositions.contains(position) && !(position == tresor)){
-        EnvoyerDonnees(client, position, "vide");
-        listePositions.replace(index, position);
-        grille->itemAtPosition(position.y(), position.x())->widget()->setStyleSheet("background-color : black");
+    else{
+        //si il y a une collision
+        if(listePositions.contains(position)){
+            int indexCollision = listePositions.indexOf(position);
+            position = DonnerPositionUnique();
+            EnvoyerDonnees(client, position, "Collision");
+            grille->itemAtPosition(position.y(), position.x())->widget()->setStyleSheet("background-color : black");
+            listePositions.replace(index, position);
+            QPoint positionAutreJoueur = listePositions.at(indexCollision);
+            grille->itemAtPosition(positionAutreJoueur.y(), positionAutreJoueur.x())->widget()->setStyleSheet("background-color : white");
+            positionAutreJoueur = DonnerPositionUnique();
+            listePositions.replace(indexCollision,positionAutreJoueur);
+            QTcpSocket *autreJoueur = listeSocketsClient.at(indexCollision);
+            EnvoyerDonnees(autreJoueur, positionAutreJoueur, "Collision");
+            grille->itemAtPosition(positionAutreJoueur.y(), positionAutreJoueur.x())->widget()->setStyleSheet("background-color : black");
+        }
+        else{
+            //si il n'y a rien dans la case
+            if(!listePositions.contains(position) && !(position == tresor)){
+                EnvoyerDonnees(client, position, "vide");
+                listePositions.replace(index, position);
+                grille->itemAtPosition(position.y(), position.x())->widget()->setStyleSheet("background-color : black");
+            }
+        }
     }
 }
 
@@ -204,7 +199,6 @@ void ServeurCrawler::onQTcpSocket_disconnected()
     listePositions.removeAt(index);
     //suppression du client
     listeSocketsClient.removeOne(client);
-
     qDebug() << "un client est déconnecté";
 }
 
