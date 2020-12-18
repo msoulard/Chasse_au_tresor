@@ -150,8 +150,20 @@ void ServeurCrawler::onQTcpSocket_readyRead()
         QPoint fin;
         fin.setX(-1);
         fin.setY(-1);
+//        int indexListe = listeSocketsClient.count();
+//        for(int i = 0 ; i > indexListe ; i++){
+//            QTcpSocket *joueur;
+//            joueur = listeSocketsClient.at(0);
+//            EnvoyerDonnees(joueur, fin, QString("Victoire de ")+QString(client->peerAddress().toString()));
+//            int indexFin=listeSocketsClient.indexOf(joueur);
+//            QPoint positionFin = listePositions.at(index);
+//            grille->itemAtPosition(positionFin.y(), positionFin.x())->widget()->setStyleSheet("background-color : white");
+//            joueur->close();
+//            listePositions.removeAt(indexFin);
+//            listeSocketsClient.removeOne(joueur);
+//        }
         EnvoyerDonnees(client, fin, QString("Victoire de ")+QString(client->peerAddress().toString()));
-        disconnect(client);
+        //client->close();
         grille->itemAtPosition(position.y(), position.x())->widget()->setStyleSheet("background-color : white");
         ViderGrille();
     }
